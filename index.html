@@ -260,32 +260,38 @@
   .n-rect.purple { border-color: var(--col-output); background: rgba(139,92,246,0.05); }
 
   /* Decision diamond */
-  .n-diamond-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 340px;
+.n-diamond-outer {
+    width: 260px;
+    height: 260px;
     position: relative;
-  }
-  .n-diamond-outer {
-    width: 200px;
-    height: 80px;
-    transform: rotate(45deg) scale(0.9);
-    border: 2px solid var(--col-decision);
-    background: rgba(232,160,32,0.06);
+    margin: 10px auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 20px 0;
+  }
+  .n-diamond-outer::before {
+    content: '';
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    background: rgba(232,160,32,0.06);
+    border: 2px solid var(--col-decision);
+    transform: rotate(45deg);
+    top: 50%;
+    left: 50%;
+    margin-top: -80px;
+    margin-left: -80px;
   }
   .n-diamond-inner {
-    transform: rotate(-45deg);
+    position: relative;
+    z-index: 1;
     text-align: center;
     font-size: 11px;
     font-weight: 600;
     color: var(--col-decision);
-    padding: 8px;
-    line-height: 1.3;
+    padding: 8px 20px;
+    line-height: 1.4;
+    max-width: 130px;
   }
 
   /* Output (wave bottom) */
@@ -578,8 +584,8 @@
   <div class="brand">
     <div class="logo-box">H5</div>
     <div>
-      <h1>FLUJO DE PROCESOS — PUESTO DE OPERACIONES</h1>
-      <p>H5 Industrial S.A. · Área de Operaciones · 15 procesos documentados</p>
+      <h1>FLUJO DE PROCESOS — Coordinación DE Operaciones</h1>
+      <p>H5 Industrial S.A. · Área de Operaciones ·</p>
     </div>
   </div>
 </header>

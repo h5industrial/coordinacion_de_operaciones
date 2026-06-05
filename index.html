@@ -1,0 +1,2259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flujo de Procesos – Puesto de Operaciones | H5 Industrial</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --navy: #1F3864;
+    --navy-mid: #2E4E8A;
+    --blue-light: #4A72C4;
+    --accent: #E8A020;
+    --accent2: #2ECC71;
+    --accent3: #E74C3C;
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --surface2: #F0F2F5;
+    --border: #DDE1E8;
+    --border-strong: #C5CCD8;
+    --text: #1A2332;
+    --text-dim: #6B7A94;
+    --white: #ffffff;
+
+    /* Node type colors — unchanged */
+    --col-start:   #2ECC71;
+    --col-action:  #4A72C4;
+    --col-decision:#E8A020;
+    --col-output:  #8B5CF6;
+    --col-input:   #06B6D4;
+    --col-sub:     #F59E0B;
+    --col-end:     #E74C3C;
+
+    /* Chain colors — unchanged */
+    --chain-prod:   #4A72C4;
+    --chain-prod-bg:#EEF2FB;
+    --chain-new:    #22B865;
+    --chain-new-bg: #EDFBF4;
+    --chain-comm:   #D4900A;
+    --chain-comm-bg:#FEF6E7;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    border-top: 3px solid var(--navy);
+    padding: 16px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 1px 8px rgba(31,56,100,0.07);
+  }
+  header .brand { display: flex; align-items: center; gap: 14px; }
+  header .logo-box {
+    width: 40px; height: 40px;
+    background: var(--navy);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600; font-size: 13px; color: #ffffff;
+    letter-spacing: 0.05em;
+  }
+  header h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; color: var(--navy); }
+  header p  { font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.04em; }
+
+  /* ── LEGEND ── */
+  .legend-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 9px 36px;
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .legend-bar span { font-size: 10px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-right: 4px; letter-spacing: 0.06em; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text); }
+  .legend-shape {
+    width: 26px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ls-oval { width: 28px; height: 18px; border-radius: 9px; border: 2px solid var(--col-start); }
+  .ls-rect { width: 26px; height: 18px; border-radius: 3px; border: 2px solid var(--col-action); }
+  .ls-diamond {
+    width: 18px; height: 18px;
+    border: 2px solid var(--col-decision);
+    transform: rotate(45deg);
+    flex-shrink: 0;
+  }
+  .ls-wave {
+    width: 26px; height: 18px;
+    background: transparent;
+    border: 2px solid var(--col-output);
+    border-radius: 0 0 8px 8px / 0 0 6px 6px;
+  }
+  .ls-para {
+    width: 26px; height: 18px;
+    background: transparent;
+    border: 2px solid var(--col-input);
+    clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+  }
+  .ls-sub {
+    width: 30px; height: 18px;
+    border: 2px solid var(--col-sub);
+    border-radius: 2px;
+    position: relative;
+  }
+  .ls-sub::before, .ls-sub::after {
+    content: '';
+    position: absolute;
+    top: -2px; bottom: -2px;
+    width: 4px;
+    border: 2px solid var(--col-sub);
+    background: var(--surface);
+  }
+  .ls-sub::before { left: 3px; }
+  .ls-sub::after { right: 3px; }
+  .ls-circle { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--text-dim); }
+
+  /* ── CHAIN TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 36px;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .tab.active-prod { color: var(--chain-prod); border-color: var(--chain-prod); }
+  .tab.active-new  { color: var(--chain-new);  border-color: var(--chain-new);  }
+  .tab.active-comm { color: var(--chain-comm); border-color: var(--chain-comm); }
+  .tab:hover:not(.active-prod):not(.active-new):not(.active-comm) { color: var(--text); }
+
+  /* ── CANVAS ── */
+  .canvas-wrapper {
+    overflow: auto;
+    padding: 40px 36px 80px;
+    position: relative;
+  }
+
+  .chain-view { display: none; }
+  .chain-view.visible { display: block; }
+
+  /* ── FLOW COLUMN ── */
+  .flow-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    min-width: 340px;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  /* ── ARROW ── */
+  .arrow {
+    width: 2px;
+    min-height: 28px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .arrow .line {
+    flex: 1;
+    width: 2px;
+    min-height: 20px;
+  }
+  .arrow .head {
+    width: 0;
+    height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+  }
+  .arrow-label {
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 2px 6px;
+    border-radius: 3px;
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+  }
+
+  /* color variants for chains */
+  .prod .line  { background: var(--chain-prod); }
+  .prod .head  { border-top: 8px solid var(--chain-prod); }
+  .new  .line  { background: var(--chain-new); }
+  .new  .head  { border-top: 8px solid var(--chain-new); }
+  .comm .line  { background: var(--chain-comm); }
+  .comm .head  { border-top: 8px solid var(--chain-comm); }
+
+  /* ── NODE BASE ── */
+  .node {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .node:hover { transform: translateY(-2px); }
+
+  /* Start / End oval */
+  .n-oval {
+    padding: 10px 28px;
+    border-radius: 30px;
+    border: 2px solid var(--col-start);
+    background: rgba(46,204,113,0.07);
+    color: #18a057;
+    font-weight: 700;
+    font-size: 12px;
+    text-align: center;
+    letter-spacing: 0.07em;
+  }
+  .n-oval.end {
+    border-color: var(--col-end);
+    background: rgba(231,76,60,0.06);
+    color: var(--col-end);
+  }
+
+  /* Action rectangle */
+  .n-rect {
+    width: 340px;
+    padding: 13px 18px;
+    border-radius: 6px;
+    border: 1.5px solid var(--col-action);
+    background: rgba(74,114,196,0.05);
+    color: var(--text);
+  }
+  .n-rect.green  { border-color: var(--col-start); background: rgba(46,204,113,0.05); }
+  .n-rect.amber  { border-color: var(--col-decision); background: rgba(232,160,32,0.05); }
+  .n-rect.purple { border-color: var(--col-output); background: rgba(139,92,246,0.05); }
+
+  /* Decision diamond */
+  .n-diamond-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 340px;
+    position: relative;
+  }
+  .n-diamond-outer {
+    width: 260px;
+    height: 260px;
+    position: relative;
+    margin: 10px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .n-diamond-outer::before {
+    content: '';
+    position: absolute;
+    width: 170px;
+    height: 170px;
+    background: rgba(232,160,32,0.06);
+    border: 2px solid var(--col-decision);
+    transform: rotate(45deg);
+    top: 50%;
+    left: 50%;
+    margin-top: -85px;
+    margin-left: -85px;
+  }
+  .n-diamond-inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--col-decision);
+    padding: 8px 16px;
+    line-height: 1.4;
+    max-width: 130px;
+  }
+
+  /* Output (wave bottom) */
+  .n-output {
+    width: 340px;
+    padding: 12px 18px;
+    border: 1.5px solid var(--col-output);
+    background: rgba(139,92,246,0.04);
+    border-radius: 4px 4px 10px 10px;
+    color: var(--text);
+    position: relative;
+  }
+  .n-output::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 10%;
+    right: 10%;
+    height: 6px;
+    background: var(--col-output);
+    opacity: 0.12;
+    border-radius: 50%;
+    filter: blur(3px);
+  }
+
+  /* Input parallelogram */
+  .n-input-wrap { width: 340px; position: relative; padding: 4px 0; }
+  .n-input {
+    padding: 12px 24px 12px 32px;
+    border: 1.5px solid var(--col-input);
+    background: rgba(6,182,212,0.04);
+    clip-path: polygon(6% 0%, 100% 0%, 94% 100%, 0% 100%);
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  /* Sub-process */
+  .n-sub {
+    width: 340px;
+    padding: 12px 18px;
+    border: 1.5px solid var(--col-sub);
+    background: rgba(245,158,11,0.04);
+    border-radius: 3px;
+    position: relative;
+    color: var(--text);
+  }
+  .n-sub::before, .n-sub::after {
+    content: '';
+    position: absolute;
+    top: -2px; bottom: -2px;
+    width: 6px;
+    border: 1.5px solid var(--col-sub);
+    background: var(--white);
+  }
+  .n-sub::before { left: 8px; }
+  .n-sub::after  { right: 8px; }
+
+  /* ── NODE INTERNALS ── */
+  .node-step {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .node-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: inherit;
+  }
+  .node-note {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 5px;
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 5px;
+  }
+  .node-tool {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--text-dim);
+  }
+  .node-role {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    background: rgba(74,114,196,0.15);
+    border: 1px solid var(--blue-light);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--blue-light);
+  }
+  .node-crit {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    background: rgba(231,76,60,0.15);
+    border: 1px solid var(--accent3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--accent3);
+    margin-left: 4px;
+  }
+  .node-pending {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    background: rgba(232,160,32,0.15);
+    border: 1px solid var(--accent);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--accent);
+    margin-left: 4px;
+  }
+
+  /* ── BRANCH LAYOUT ── */
+  .branch-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    width: 100%;
+    justify-content: center;
+    position: relative;
+  }
+  .branch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .branch-label {
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin: 4px 0;
+    font-weight: 600;
+  }
+  .bl-yes  { background: rgba(46,204,113,0.15);  color: var(--col-start); }
+  .bl-no   { background: rgba(231,76,60,0.15);   color: var(--col-end); }
+  .bl-cont { background: rgba(74,114,196,0.15);  color: var(--blue-light); }
+
+  /* Horizontal connector */
+  .h-line {
+    height: 2px;
+    min-width: 40px;
+    align-self: center;
+    position: relative;
+  }
+
+  /* Connector circle */
+  .n-connector {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--text-dim);
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  /* SOP Badge */
+  .sop-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--navy);
+    border: 1px solid var(--navy);
+    color: #ffffff;
+    font-size: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    z-index: 10;
+  }
+
+  /* ── SECTION HEADERS ── */
+  .section-header {
+    width: 100%;
+    max-width: 420px;
+    margin: 32px auto 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-header .sh-line { flex: 1; height: 1px; }
+  .section-header .sh-text {
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  /* PROD chain colors */
+  .chain-prod .sh-line  { background: var(--chain-prod); }
+  .chain-prod .sh-text  { background: rgba(74,114,196,0.15); color: var(--chain-prod); border: 1px solid var(--chain-prod); }
+  .chain-new  .sh-line  { background: var(--chain-new); }
+  .chain-new  .sh-text  { background: rgba(46,204,113,0.15); color: var(--chain-new); border: 1px solid var(--chain-new); }
+  .chain-comm .sh-line  { background: var(--chain-comm); }
+  .chain-comm .sh-text  { background: rgba(232,160,32,0.15); color: var(--chain-comm); border: 1px solid var(--chain-comm); }
+
+  /* Multi-flow grid */
+  .multi-flow {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 40px;
+    align-items: start;
+  }
+  .flow-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 1px 6px rgba(31,56,100,0.05);
+  }
+  .flow-card-title {
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding: 6px 14px;
+    border-radius: 4px;
+  }
+  .fc-prod { background: rgba(74,114,196,0.15); color: var(--chain-prod); border: 1px solid var(--chain-prod); }
+  .fc-new  { background: rgba(46,204,113,0.15); color: var(--chain-new);  border: 1px solid var(--chain-new);  }
+  .fc-comm { background: rgba(232,160,32,0.15); color: var(--chain-comm); border: 1px solid var(--chain-comm); }
+
+  /* Tooltip */
+  .tooltip {
+    display: none;
+    position: fixed;
+    background: var(--white);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 14px 16px;
+    max-width: 320px;
+    z-index: 9999;
+    box-shadow: 0 8px 28px rgba(31,56,100,0.13);
+    font-size: 12px;
+    line-height: 1.6;
+    pointer-events: none;
+  }
+  .tooltip.visible { display: block; }
+  .tooltip h4 { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+  .tooltip p  { color: var(--text); margin-bottom: 4px; }
+  .tooltip .t-tag { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text-dim); }
+
+  /* Footer */
+  .footer-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 8px 36px;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    display: flex;
+    justify-content: space-between;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <div class="logo-box">H5</div>
+    <div>
+      <h1>FLUJO DE PROCESOS — COORDINACIÓN DE OPERACIONES</h1>
+      <p>H5 Industrial S.A. · Área de Operaciones · 15 procesos documentados</p>
+    </div>
+  </div>
+</header>
+
+<!-- LEGEND -->
+<div class="legend-bar">
+  <span>SIMBOLOGÍA →</span>
+  <div class="legend-item"><div class="legend-shape"><div class="ls-oval"></div></div>Inicio / Fin</div>
+  <div class="legend-item"><div class="legend-shape"><div class="ls-rect"></div></div>Acción / Proceso</div>
+  <div class="legend-item"><div class="legend-shape" style="width:24px"><div class="ls-diamond"></div></div>Toma de decisión</div>
+  <div class="legend-item"><div class="legend-shape"><div class="ls-wave"></div></div>Salida de información</div>
+  <div class="legend-item"><div class="legend-shape"><div class="ls-para"></div></div>Entrada de información</div>
+  <div class="legend-item"><div class="legend-shape"><div class="ls-sub"></div></div>Subproceso</div>
+  <div class="legend-item"><div class="legend-shape"><div class="ls-circle"></div></div>Conector</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active-prod" onclick="showChain('prod')">⚙️ Cadena Productiva</div>
+  <div class="tab" onclick="showChain('new')">🧪 Cadena Producto Nuevo</div>
+  <div class="tab" onclick="showChain('comm')">📊 Cadena Comercial/Reportes</div>
+</div>
+
+<!-- CANVAS -->
+<div class="canvas-wrapper">
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- CADENA 1: PRODUCTIVA                                    -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="chain-prod" class="chain-view visible">
+    <div class="multi-flow">
+
+      <!-- ── PROCESO 1: PROGRAMA DE PRODUCCIÓN ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-prod">1 · Programa de Producción</div>
+        <div class="flow-column">
+
+          <div class="node" data-tip="Inicio del ciclo semanal. Se ejecuta todos los lunes.">
+            <div class="n-oval">INICIO — Lunes</div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="SAP → Módulos → Query Manager → Logística → Pedidos pendientes de facturar. Ejecutar para cada empresa del grupo.">
+            <div class="n-rect" style="position:relative">
+              <div class="sop-badge">Paso 1</div>
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Verificar pedidos de la semana anterior facturados</div>
+              <div class="node-note">SAP: Query Manager → Logística → Pedidos pendientes de facturar</div>
+              <span class="node-tool">SAP</span><span class="node-role">Enc. Operaciones</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Generar: (1) Informe de auditoría de stock por bodega. (2) Pedidos pendientes de clientes por facturar. Descargar y convertir a Excel. Excluir bodega de maquila.">
+            <div class="n-rect">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Generar 2 informes SAP: Inventario + Pedidos pendientes</div>
+              <div class="node-note">Módulos → Inventarios → Informe de auditoría de stock. Eliminar intercompany.</div>
+              <span class="node-tool">SAP / Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Sistema de colores: Rojo = urgente. Amarillo = faltante para miércoles siguiente. Naranja = faltante para viernes siguiente. Meta: 3 semanas de inventario (se calcula con 5 semanas operativas).">
+            <div class="n-input-wrap">
+              <div class="n-input">
+                <div class="node-step">PASO 3</div>
+                <div class="node-title">Ingresar datos al Excel: ml, productor, exportadores, mínimo de inventario</div>
+                <span class="node-tool">Excel</span><span class="node-role">Manual</span>
+              </div>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Pedidos comprometidos = pedidos realizados aún no facturados. Semana de fondo = nivel de seguridad calculado con promedio de ventas últimos 3 meses.">
+            <div class="n-rect">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Registrar pedidos comprometidos y calcular semana de fondo</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Meta: producción siempre en cajas cerradas. Objetivo: 10-11 semanas de inventario en semana de producción. Rango efectivo: semanas 6 a 11.">
+            <div class="n-rect">
+              <div class="node-step">PASO 5</div>
+              <div class="node-title">Realizar planificación semanal de producción (manual)</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Por granel completo (no por producto individual). Ollas: mín 4,500 kg / máx 5,000 kg. Tambores para aguas micelares y body mists.">
+            <div class="n-rect">
+              <div class="node-step">PASO 6</div>
+              <div class="node-title">Realizar pedido de marmita a proveedores según semanas de inventario</div>
+              <span class="node-tool">SAP / Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Descargar por separado: Laboratorios Nefertiti, H5 Industrial, Iberoamerican. Crear tabla dinámica y eliminar intercompany.">
+            <div class="n-rect">
+              <div class="node-step">PASO 7</div>
+              <div class="node-title">Obtener listado de clientes pendientes de facturar desde SAP</div>
+              <span class="node-tool">SAP / Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Ajuste por exportaciones: si generan faltantes, adelantar proyecciones al número de semanas indicado.">
+            <div class="n-rect">
+              <div class="node-step">PASO 8</div>
+              <div class="node-title">Revisar inventario comprometido y descontarlo del disponible</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Packs: 1,000 packs = 1,000 acondicionadores + 1,000 shampoos = 2,000 unidades. Faltantes WM: sacar de producción y reponer después.">
+            <div class="n-rect">
+              <div class="node-step">PASO 9</div>
+              <div class="node-title">Copiar información al documento de revisión de producción</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Recibir factura física en oficina (lunes, primeras 2 horas ideal). Buscar producto en columna de descripción del Excel y restar cantidad entregada.">
+            <div class="n-rect">
+              <div class="node-step">PASO A — Elaboración</div>
+              <div class="node-title">Recibir facturas físicas de entregas de maquila</div>
+              <div class="node-note">Cinthya entrega las facturas a Enc. Operaciones</div>
+              <span class="node-tool">Documento físico</span><span class="node-role">Cinthya → Patricia</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Permite control más detallado del proceso de producción.">
+            <div class="n-rect">
+              <div class="node-step">PASO B</div>
+              <div class="node-title">Registrar manualmente movimiento de producción en SAP</div>
+              <span class="node-tool">SAP</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Cinthya recibe las facturas y las archiva correctamente para control documental.">
+            <div class="n-rect">
+              <div class="node-step">PASO C</div>
+              <div class="node-title">Devolver facturas físicas a Cinthya para archivar</div>
+              <span class="node-role">Cinthya archiva</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Filtrar columnas AL y AO de mayor a menor. Meta: todos los productos con 11 semanas o menos. Reporte de causas para Gerente General.">
+            <div class="n-rect" style="position:relative">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer">
+                  <div class="n-diamond-inner">¿Algún producto con inventario elevado?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow prod" style="height:18px"><div class="line" style="height:18px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Documentar análisis de causas y reportar a Gerencia</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow prod" style="height:18px"><div class="line" style="height:18px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Compartir programa con Dayana y Cinthya</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow prod" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Compartir con equipo operativo. Documento debe entregarse a AMSA el lunes en la tarde o martes en la mañana a más tardar.">
+            <div class="n-output">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Programa de producción final → entregado a AMSA + equipo</div>
+              <div class="node-note">Entrega: lunes tarde / martes mañana máximo</div>
+            </div>
+          </div>
+
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 2: SEGUIMIENTO DE PRODUCCIÓN ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-prod">2 · Seguimiento de Proceso de Producción</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval">INICIO — Diario</div></div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Al mismo tiempo, Cinthya envía la orden a Manuel para su revisión física.">
+            <div class="n-rect">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Subir pedido de cliente al sistema (SAP)</div>
+              <div class="node-note">Cinthya envía orden a Manuel para revisión física simultánea</div>
+              <span class="node-tool">SAP</span><span class="node-role">Enc. Operaciones</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Si hay discrepancia entre lo físico y el sistema, resolver antes de proceder con cualquier otro paso.">
+            <div class="n-rect">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Manuel verifica inventario físico; Operaciones verifica sistema</div>
+              <div class="node-note">Confirmar coincidencia entre cantidades físicas y sistema</div>
+              <span class="node-role">Manuel + Patricia</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer">
+                  <div class="n-diamond-inner">¿Es pedido Walmart?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow prod" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Revisar faltantes en línea y dar seguimiento a AMSA</div>
+                  <span class="node-crit">PRIORIDAD</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow prod" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect" style="width:155px;font-size:11px">
+                  <div class="node-title">Continuar seguimiento estándar</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow prod" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Dar seguimiento a: etiquetas, cintas, camiones asignados, ubicación de productos, logística de envío al CEDI y preparación de pedidos.">
+            <div class="n-rect">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Dar seguimiento a faltantes en pedidos: etiquetas, logística, CEDI</div>
+              <span class="node-tool">Excel / Correo</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Dayana ejecuta la explosión de materiales. Brindar seguimiento y apoyo en caso necesario.">
+            <div class="n-sub">
+              <div class="node-step">SUBPROCESO</div>
+              <div class="node-title">Dar seguimiento a explosión de materiales (Dayana)</div>
+              <span class="node-role">Dayana (ejecuta)</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Revisar promedios e inventarios de productos importados. Proceso pendiente de expandir.">
+            <div class="n-rect amber">
+              <div class="node-step">PASO 8</div>
+              <div class="node-title">Dar seguimiento a productos importados</div>
+              <div class="node-note">Revisar promedios e inventarios</div>
+              <span class="node-pending">PENDIENTE expandir</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node"><div class="n-oval end">FIN — Ciclo diario</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 3: SEGUIMIENTO MAQUILA INTERNA ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-prod">3 · Seguimiento Maquila Interna</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval">INICIO — Diario</div></div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Si no se recibió el reporte, contactar directamente al encargado de Bodega. No asumir que no hubo producción.">
+            <div class="n-rect">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Verificar recepción del reporte diario en WhatsApp "Maquila Interna"</div>
+              <div class="node-note">Archivo: "Control de maquila interna" en formato Excel</div>
+              <span class="node-tool">WhatsApp</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer">
+                  <div class="n-diamond-inner">¿Se recibió el reporte?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow prod" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect" style="width:155px;font-size:11px">
+                  <div class="node-title">Contactar directamente al encargado de Bodega Maquila</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow prod" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Descargar y abrir archivo "Control de maquila interna"</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow prod" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Columnas K, L y M se calculan automáticamente. No omitir ninguna columna. Respetar orden exacto. Formato de nombres estandarizado (ej: 'Armados de pack de difusores').">
+            <div class="n-input-wrap">
+              <div class="n-input">
+                <div class="node-step">PASO 4</div>
+                <div class="node-title">Ingresar datos en archivo maestro "H5 control de trabajo maquila interna" (10 columnas en orden)</div>
+                <span class="node-tool">Excel</span>
+              </div>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Validar columnas K (Costo/hora), L (Costo total/hora), M (Costo/unidad×hora). No modificar fórmulas. Valores no deben ser 0, negativos ni errores.">
+            <div class="n-rect">
+              <div class="node-step">PASO 5</div>
+              <div class="node-title">Verificar cálculo automático de columnas K, L y M</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer">
+                  <div class="n-diamond-inner">¿Costo M dentro del rango histórico?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow prod" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Registrar validación → cerrar análisis del día</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow prod" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Llamar al Enc. Maquila Interna para consultar causa</div>
+                  <span class="node-crit">ALERTA</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow prod" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Guardar antes de cerrar para no perder registros del día.">
+            <div class="n-rect">
+              <div class="node-step">PASO 9</div>
+              <div class="node-title">Guardar y cerrar archivo H5</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 4: ENTREGABLES AMSA ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-prod">4 · Reporte Entregables AMSA</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval">INICIO — Diario / Martes</div></div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Carpeta: 'AMSA-Ricardo'. Documento: 'Entregables periodo 2026'. Cada fila es una semana. Las primeras columnas = programación; luego entregado; luego pendientes.">
+            <div class="n-rect">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Abrir archivo "Entregables periodo 2026" en carpeta AMSA-Ricardo</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Filtrar columna F por 'AMSA' para obtener únicamente sus pedidos programados y los faltantes por semana.">
+            <div class="n-rect">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Abrir programa de producción y filtrar por productor AMSA (col. F)</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Faltantes de semanas anteriores que persisten se mantienen. Lo entregado = lo programado menos lo pendiente actual.">
+            <div class="n-input-wrap">
+              <div class="n-input">
+                <div class="node-step">PASO 3</div>
+                <div class="node-title">Ingresar faltantes por semana en la sección de pendientes del reporte</div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Cada vez que llega una factura de entrega por parte de AMSA, actualizar el reporte ese mismo día.">
+            <div class="n-rect">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Verificar facturas de entrega y actualizar columna de entregados</div>
+              <span class="node-tool">Excel / Facturas</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Solo los martes: confirmar que todas las semanas activas tengan datos correctos de programado, entregado y pendiente.">
+            <div class="n-rect amber">
+              <div class="node-step">PASO 5 — Solo Martes</div>
+              <div class="node-title">Revisar que el reporte esté completo y actualizado</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Envío en el chat de Gerencia AMSA. NO por correo. Objetivo: presión para cumplimiento de pedidos programados.">
+            <div class="n-output">
+              <div class="node-step">PASO 6 — SALIDA</div>
+              <div class="node-title">Enviar reporte al chat "Gerencia AMSA" todos los martes</div>
+              <span class="node-crit">Solo chat, no correo</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 5: REUNIÓN MENSUAL PROVEEDORES ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-prod">5 · Reunión Mensual con Proveedores</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval">INICIO — Mensual</div></div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="SAP: Módulos → Inventario → Informes de inventario → Reporte de consumos en periodo. Dayana genera el reporte; Patricia revisa y valida.">
+            <div class="n-rect">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Preparar información de consumo mensual por proveedor (Dayana genera, Patricia valida)</div>
+              <span class="node-tool">SAP / Excel</span><span class="node-role">Dayana → Patricia</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Misma ruta SAP con fechas del año anterior. Proyección basada en consumo histórico + YTD.">
+            <div class="n-rect">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Preparar proyección de compras para los próximos 3 meses</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Prioridad máxima: ENVASA local y ENVASA importaciones (2 reuniones separadas por su extensión). Dayana programa todas las reuniones.">
+            <div class="n-sub">
+              <div class="node-step">SUBPROCESO</div>
+              <div class="node-title">Realizar reunión con cada proveedor: consumos + proyección</div>
+              <div class="node-note">ENVASA local y ENVASA importaciones: 2 reuniones separadas</div>
+              <span class="node-role">Dayana programa</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer">
+                  <div class="n-diamond-inner">¿Proveedor reporta riesgo de desabasto?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow prod" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Dayana escala inmediatamente a Enrique Castillo</div>
+                  <span class="node-crit">ESCALADA</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow prod" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Coordinar esquema de abastecimiento conveniente</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow prod" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Minutas elaboradas por Dayana y Cinthya. Incluir: acuerdos de entrega, compromisos del proveedor, alertas de desabasto y puntos de seguimiento.">
+            <div class="n-output">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Documentar acuerdos en minuta (Dayana + Cinthya)</div>
+              <span class="node-role">Dayana + Cinthya</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Revisar que acuerdos de la minuta se cumplan. Incumplimientos se notifican a Enc. Operaciones y se registran para la próxima reunión.">
+            <div class="n-rect">
+              <div class="node-step">PASO 6</div>
+              <div class="node-title">Dar seguimiento a compromisos durante el mes</div>
+              <span class="node-tool">Excel / Correo</span>
+            </div>
+          </div>
+          <div class="arrow prod"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+    </div><!-- end multi-flow -->
+  </div><!-- end chain-prod -->
+
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- CADENA 2: PRODUCTO NUEVO                               -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="chain-new" class="chain-view">
+    <div class="multi-flow">
+
+      <!-- ── PROCESO 6: COSTEO PRODUCTOS NUEVOS ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-new">6 · Costeo para Productos Nuevos</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-new);color:var(--chain-new)">INICIO — Por evento</div></div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="La solicitud incluye: tipo de tapa, tipo de envase, granel, fragancia, maquiladora a utilizar y precio meta para distribuidor.">
+            <div class="n-input-wrap">
+              <div class="n-input" style="border-color:var(--chain-new)">
+                <div class="node-step">ENTRADA</div>
+                <div class="node-title">Recibir especificaciones del producto del Gerente General</div>
+                <div class="node-note">Tapa, envase, granel, fragancia, maquiladora, precio meta</div>
+                <span class="node-role">Gerente General → Patricia</span>
+              </div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative;border-color:var(--chain-new)">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer" style="border-color:var(--chain-new)">
+                  <div class="n-diamond-inner" style="color:var(--chain-new)">¿Envase existe en SAP?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow new" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Obtener costo de envase directamente de SAP</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow new" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Solicitar cotización al proveedor antes de continuar</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow new" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Obtener de SAP: costo de granel (fórmula base) y costo de maquila según la maquiladora indicada.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 3</div>
+              <div class="node-title">Obtener costos de granel y maquila desde SAP</div>
+              <span class="node-tool">SAP</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Si ya están en SAP, extraer costo registrado. Si son nuevos, solicitar cotización al proveedor.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Obtener costos de caja y etiqueta</div>
+              <span class="node-tool">SAP / Correo</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Tabla con columnas por tipo de envase (1 a 3 opciones comparativas si aplica).">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 5</div>
+              <div class="node-title">Crear tabla de costeo en Excel (opciones comparativas)</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Fórmula WM: (Precio público / 1.13) × 0.75. División entre 1.13 elimina IVA 13%. Multiplicar por 0.75 porque WM gana 25% sobre ventas netas en promedio.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 6</div>
+              <div class="node-title">Calcular precio WM: (Precio público / 1.13) × 0.75</div>
+              <div class="node-note">Contribución = Precio WM − Costo Total. Margen = Contribución / Precio WM (%)</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Gerencia revisa y decide: envase a usar, precio de venta final y si el producto procede a lanzamiento.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 8</div>
+              <div class="node-title">Presentar costeo al Gerente General para decisión</div>
+              <span class="node-role">Gerente General aprueba</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative;border-color:var(--chain-new)">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer" style="border-color:var(--chain-new)">
+                  <div class="n-diamond-inner" style="color:var(--chain-new)">¿GG aprueba lanzamiento?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow new" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Continuar a creación de ítem y muestra</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow new" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect" style="width:155px;font-size:11px">
+                  <div class="node-title">Archivar costeo en "Costos Varios" igualmente</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow new" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Comunicar a Cinthya: tipo de tapa, tipo de envase, etiqueta, código de barras, granel, color y lo que requiera para crear el ítem.">
+            <div class="n-sub" style="border-color:var(--chain-new)">
+              <div class="node-step">SUBPROCESO</div>
+              <div class="node-title">Comunicar a Cinthya para creación del ítem nuevo en SAP</div>
+              <span class="node-role">Cinthya crea ítem</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Logan consulta en chat 'Control de calidad'. Si aprobada → enviar muestra a maquila. Siempre conservar una muestra para control.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 12</div>
+              <div class="node-title">Crear muestra física y enviar a control de calidad (Logan)</div>
+              <span class="node-tool">WhatsApp — "Control de calidad"</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Mantener seguimiento hasta que el producto sea creado y entregado en la oficina.">
+            <div class="n-output" style="border-color:var(--chain-new)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Guardar costeo en "Costos Varios" + seguimiento hasta entrega</div>
+              <span class="node-tool">Excel / Carpeta Costos Varios</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end" style="border-color:var(--col-end)">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 7: FICHA TÉCNICA ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-new">7 · Elaboración de Fichas Técnicas</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-new);color:var(--chain-new)">INICIO — Por urgencia / Proyecto</div></div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Proceso priorizado según urgencia o planificación de la jornada. Meta: 2 fichas/día (1 hora). Meta óptima: 5 fichas/día (2.5 horas). Requiere concentración total.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Identificar producto a documentar y localizar en SAP</div>
+              <span class="node-tool">SAP</span>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 1: FICHA INTERNA -->
+          <div class="section-header chain-new" style="width:320px">
+            <div class="sh-line"></div>
+            <div class="sh-text">SECCIÓN 1 — Ficha Interna</div>
+            <div class="sh-line"></div>
+          </div>
+
+          <div class="arrow new"><div class="line" style="height:16px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Ruta SAP: Módulos → Inventario → Datos maestros del artículo. Transcribir exactamente, sin interpretar ni resumir.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Copiar fórmula cuali-cuantitativa desde SAP (sin modificaciones)</div>
+              <span class="node-tool">SAP / Excel</span><span class="node-crit">Exacto</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:16px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Campos: Peso, pH, Viscosidad, Apariencia. Este documento es la fuente oficial de especificaciones de granel.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 3</div>
+              <div class="node-title">Registrar datos de granel desde documento compartido de especificaciones</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:16px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Incluye: especificaciones PT, código de barras, registro sanitario (RS), contenido del producto, embalaje.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Completar evaluación de producto terminado</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:16px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 5-6</div>
+              <div class="node-title">Registrar material de empaque y datos de entarimado</div>
+              <div class="node-note">Cajas por cama y camas por tarima</div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 2: FICHA COMERCIAL -->
+          <div class="section-header chain-new" style="width:320px">
+            <div class="sh-line"></div>
+            <div class="sh-text">SECCIÓN 2 — Ficha Comercial</div>
+            <div class="sh-line"></div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:16px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Archivo 'Item Information' gestionado por Cinthya. Si el producto no está incluido, anotar pendiente y dar seguimiento para su incorporación.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 1C</div>
+              <div class="node-title">Acceder al archivo "Item Information" (Cinthya) para descripción comercial</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:16px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative;border-color:var(--chain-new)">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer" style="border-color:var(--chain-new)">
+                  <div class="n-diamond-inner" style="color:var(--chain-new)">¿Producto en Item Information?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow new" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Buscar artículo similar como referencia provisional o consultar GG</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow new" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Completar especificaciones, empaque y dimensiones</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow new" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Verificar que no quede ningún campo vacío antes de guardar. Carpeta organizada por producto.">
+            <div class="n-output" style="border-color:var(--chain-new)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Revisar completitud y guardar en carpeta "Fichas Técnicas"</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 8: TRÁMITES RS ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-new">8 · Trámites Registros Sanitarios</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-new);color:var(--chain-new)">INICIO — Por evento</div></div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Nuevo producto: fórmula cuali-cuantitativa + ficha técnica + etiqueta. Post-registro: únicamente la fórmula cuali-cuantitativa.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Determinar si es registro inicial o post-registro</div>
+              <div class="node-note">Nuevo → 3 documentos | Post-registro → solo fórmula</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Consultar la carpeta 'Fórmulas cuali cuantitativas'. Tomar como referencia el formato más reciente disponible.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 1.1</div>
+              <div class="node-title">Consultar carpeta "Fórmulas cuali cuantitativas" como referencia</div>
+              <span class="node-tool">Carpeta compartida</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Logo + firma del químico (izquierda). Datos de maquila: Ubicación, Apartado, Correo, Teléfono (derecha). Título: 'FORMULA CUALI-CUANTITATIVA' (centrado arriba).">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Crear documento Excel y configurar estructura fija del formato</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="CAMPO CRÍTICO: cualquier discrepancia con el nombre registrado puede invalidar el documento. Verificar contra documentación oficial del Ministerio de Salud.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 3</div>
+              <div class="node-title">Ingresar título de la fórmula EXACTAMENTE como fue registrado en el Ministerio de Salud</div>
+              <span class="node-crit">CAMPO CRÍTICO</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Copiar datos directamente del sistema para evitar errores de transcripción. No modificar cantidades, porcentajes ni orden sin validación previa.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Extraer información de la fórmula desde SAP (sin modificaciones)</div>
+              <span class="node-tool">SAP</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="PENDIENTE: Definir proceso formal de validación INCI para eliminar error humano. Actualmente depende del criterio de quien ejecuta.">
+            <div class="n-rect amber" style="border-color:var(--accent)">
+              <div class="node-step">PASO 5</div>
+              <div class="node-title">Verificar y convertir componentes al formato INCI</div>
+              <span class="node-pending">PENDIENTE: Proceso formal INCI</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="PENDIENTE: Definir formalmente la cadena de revisión (quiénes validan, en qué orden y con qué plazo máximo por revisor). No avanzar sin la totalidad de las validaciones.">
+            <div class="n-rect amber">
+              <div class="node-step">PASO 6</div>
+              <div class="node-title">Enviar a cadena de revisión para validación</div>
+              <span class="node-pending">PENDIENTE: Definir cadena</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Christopher Castillo verifica congruencia entre fórmula y etiqueta. Si hay discrepancias, no avanzar hasta resolverlas.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 6.1</div>
+              <div class="node-title">Validar congruencia entre fórmula y etiqueta del producto (Christopher Castillo)</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Verificar que el PDF conserve el formato, logos, datos y firmas correctamente. Revisar visualmente antes de enviar.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 7</div>
+              <div class="node-title">Convertir Excel a PDF (solo después de recibir TODAS las validaciones)</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Firma exclusivamente digital. No se aceptan firmas físicas escaneadas en ninguna circunstancia.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 8</div>
+              <div class="node-title">Enviar PDF al químico de la maquila para FIRMA DIGITAL</div>
+              <span class="node-crit">Solo firma digital</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Correo a Rafael Valverde. Notificar también en chat 'Registros Sanitarios' inmediatamente después del correo.">
+            <div class="n-output" style="border-color:var(--chain-new)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Enviar documentación al Gestor de RS (Rafael Valverde) + notificar en chat</div>
+              <div class="node-note">Chat: "Registros Sanitarios"</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Una vez que Rafael entrega el RS oficial, enviarlo a Katherine (Encargada de Archivo) para resguardo y seguimiento formal.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 10</div>
+              <div class="node-title">Recibir RS oficial y enviarlo a Katherine (Encargada de Archivo)</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 9: ACTUALIZACIÓN MATRIZ NUTRISOL ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-new">9 · Actualización Matriz-Nutrisol</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-new);color:var(--chain-new)">INICIO — Por solicitud</div></div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Acceder a la carpeta 'Nutrisol' y abrir la matriz vigente.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Acceder a carpeta "Nutrisol" y abrir la matriz vigente</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Código y descripción del producto. Consultar código de barras en carpeta control AMSA (don Ricardo). Cada código es único. Si se agotan los disponibles → solicitar nuevos a don Ricardo.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 2-3</div>
+              <div class="node-title">Registrar código del producto y obtener código de barras del control AMSA</div>
+              <span class="node-tool">Excel / Carpeta AMSA</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="GS1 Costa Rica → Seleccionar GTIN-13 → Ingresar dígitos sin verificador → Sistema calcula automáticamente.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 5-6</div>
+              <div class="node-title">Calcular dígito verificador (GTIN-13) y DUM 14 (GTIN-14) en GS1 Costa Rica</div>
+              <span class="node-tool">GS1 Costa Rica (web)</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Verificar que el RS esté vigente y corresponda al producto correcto. Ej: C-CR-15-02474.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 7</div>
+              <div class="node-title">Registrar número de Registro Sanitario del producto</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="La decisión final de precios es EXCLUSIVA del Gerente General. No continuar hasta contar con aprobación. Presentar filas 5 y 6 de la matriz.">
+            <div class="n-rect amber">
+              <div class="node-step">PASO 8 — BLOQUEANTE</div>
+              <div class="node-title">Consultar GG para definir Precio Nutrisol y Precio Público Sugerido</div>
+              <span class="node-crit">No continuar sin aprobación</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Cinthya administra y actualiza el archivo 'item information'. Contiene: Unidades Disponibles, Unidad de Empaque, dimensiones del producto y la caja.">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 9-10</div>
+              <div class="node-title">Solicitar "item information" a Cinthya y completar campos de empaque y dimensiones</div>
+              <span class="node-role">Cinthya provee</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="border-color:var(--chain-new)">
+              <div class="node-step">PASO 11</div>
+              <div class="node-title">Insertar fotografía del producto en la sección "Foto del producto"</div>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Revisar CADA campo antes del envío. Si alguno está incompleto → completar antes de enviar. Enviar al contacto designado de Nutrisol.">
+            <div class="n-output" style="border-color:var(--chain-new)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Verificar completitud de todos los campos y enviar matriz al cliente Nutrisol</div>
+              <span class="node-tool">Correo electrónico</span>
+            </div>
+          </div>
+          <div class="arrow new"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+    </div><!-- end multi-flow -->
+  </div><!-- end chain-new -->
+
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- CADENA 3: COMERCIAL / REPORTES                         -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div id="chain-comm" class="chain-view">
+    <div class="multi-flow">
+
+      <!-- ── PROCESO 10: SELL IN / SELL OUT ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-comm">10 · Reporte Sell In / Sell Out</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-comm);color:var(--chain-comm)">INICIO — Mensual (primeros días)</div></div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Indicarle la fecha límite (máximo día 3 hábil del mes). Si no responde en 24 horas, hacer seguimiento. NO continuar sin este archivo.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Solicitar archivo de Sell Out a Gabriela</div>
+              <div class="node-note">Esperar: no continuar sin este archivo</div>
+              <span class="node-tool">WhatsApp</span><span class="node-crit">Bloqueante</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Módulo de ventas SAP, mes anterior completo. Ruta SAP pendiente de documentar por Patricia en primera ejecución.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Extraer datos de Sell In del mes anterior desde SAP</div>
+              <span class="node-tool">SAP / Excel</span><span class="node-pending">Ruta SAP por definir</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Siempre el mismo archivo, no se crea uno nuevo. Verificar datos históricos de meses anteriores del año en curso y año anterior correctamente cargados.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 3</div>
+              <div class="node-title">Abrir plantilla "Comparativo de ventas Sell In Sell Out" (mismo archivo anual)</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Actualizar por separado: Departamento 69 (Alcoholes) y Departamento 40 (Marcas Privadas). Ambos deben quedar actualizados.">
+            <div class="n-input-wrap">
+              <div class="n-input" style="border-color:var(--chain-comm)">
+                <div class="node-step">PASO 4</div>
+                <div class="node-title">Actualizar datos de Sell In y Sell Out en la plantilla (Dpto 69 y 40)</div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Fórmula: % variación = (Año Actual – Año Anterior) / Año Anterior. Si hay mes en 0 o vacío → registrar 'Sin dato previo'. Verificar que el acumulado cierre correctamente para ambos departamentos.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 6</div>
+              <div class="node-title">Revisar comparativo Year to Day (año actual vs. año anterior)</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Asunto estándar: 'Reporte Sell In / Sell Out – Departamentos 69 y 40 – [Mes Año]'. Jonathan no suele responder; esto es conocido y no indica falla. Documentar fecha, destinatario y archivo adjunto para trazabilidad.">
+            <div class="n-output" style="border-color:var(--chain-comm)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Enviar reporte a Jonathan Fonseca (resurtidor WM) por correo</div>
+              <div class="node-note">Jonathan no suele responder → normal. Documentar envío.</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node"><div class="n-rect" style="border-color:var(--chain-comm)">
+            <div class="node-step">PASO 9</div>
+            <div class="node-title">Archivar reporte y dejar evidencia del envío (historial 12 meses)</div>
+          </div></div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 11: BACK ORDER ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-comm">11 · Reporte Back Order</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-comm);color:var(--chain-comm)">INICIO — Primeros días del mes</div></div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="SAP → Módulos → Ventas → Informe de ventas → Análisis de órdenes de ventas. Ingresar fechas del mes anterior completo.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Ingresar a SAP y navegar al módulo Análisis de Órdenes de Ventas</div>
+              <span class="node-tool">SAP</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="CRÍTICO: un error en fechas invalida TODO el reporte. Entrega desde: primer día del mes anterior. Entrega hasta: último día del mes anterior.">
+            <div class="n-rect amber">
+              <div class="node-step">PASO 1.1 — CRÍTICO</div>
+              <div class="node-title">Configurar fechas de entrega del período analizado</div>
+              <span class="node-crit">Error de fechas → reporte inválido</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Confirmar que el período, las compañías y los datos mostrados corresponden al mes analizado. Si hay inconsistencias, regresar al paso 1.1.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Verificar que la información generada es correcta</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Nombre de archivo: Back_Order_MesAño.xlsx. Ej: Back_Order_Abril2026.xlsx">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 3</div>
+              <div class="node-title">Exportar informe a Excel con nomenclatura estándar</div>
+              <span class="node-tool">SAP / Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Activar filtros. Ubicar columna M: 'Cantidad Pendiente'. Filtrar para mostrar únicamente registros con valor mayor a 0.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Aplicar filtros y ubicar columna M "Cantidad Pendiente" (valores > 0)</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="3 secciones/pestañas separadas por compañía: LN, H5 Industrial, Iberoamerican.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 5</div>
+              <div class="node-title">Analizar cantidades pendientes separadas por compañía (3 pestañas)</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Categorías: Sin inventario | Cliente canceló | Problema logístico | Error de sistema | Despacho parcial | Producto descontinuado. Si la causa no es evidente, coordinar con almacén, logística o área comercial.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 6</div>
+              <div class="node-title">Documentar causa de no entrega para cada back order</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Vista unificada: nombre de compañía, total de líneas pendientes, total de unidades pendientes y causas principales agrupadas.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 7</div>
+              <div class="node-title">Crear consolidado de las 3 compañías en una sola pestaña resumen</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Presentar en primeros días del mes. Proponer acciones correctivas. Registrar acuerdos y compromisos surgidos de la reunión.">
+            <div class="n-output" style="border-color:var(--chain-comm)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Presentar reporte ejecutivo a Gerencia con causas y propuestas</div>
+              <span class="node-role">Gerente General</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node"><div class="n-rect" style="border-color:var(--chain-comm)">
+            <div class="node-step">PASO 9</div>
+            <div class="node-title">Archivar reporte finalizado (historial 12 meses mínimo)</div>
+          </div></div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 12: REPORTE DE MARGINACIÓN ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-comm">12 · Reporte de Marginación</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-comm);color:var(--chain-comm)">INICIO — Días 1 y 16 del mes</div></div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="3 empresas: LN (día 1-15), H5 Industrial, Iberoamerican. SAP: Módulos → Informes de Ventas → Análisis de ventas → Artículos → ingresar fecha → Total por cliente. Para Iberoamerican e Nefertiti: ingresar directamente a su cuenta SAP.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Extraer ventas del período desde SAP (3 empresas: LN, H5, Iberoamerican)</div>
+              <span class="node-tool">SAP</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Filtrar por: H5 Industrial, Laboratorios Nefertiti, Iberoamerican → eliminar esas filas. Eliminar columnas 'Ganancia' y '%'. Crear tabla dinámica: N° artículo, descripción, cantidad, importe de ventas. Copiar y pegar como valores.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 2-3</div>
+              <div class="node-title">Consolidar en Excel y eliminar registros intercompany</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="LN: Query Manager → Inventario → Lista de productos con costo por bodega. H5 Personal Care: costo real de tintes, jabones, talcos y laca. Iberoamerican: atunes, sardinas, harinas.">
+            <div class="n-input-wrap">
+              <div class="n-input" style="border-color:var(--chain-comm)">
+                <div class="node-step">PASO 5</div>
+                <div class="node-title">Extraer costo unitario por empresa desde SAP</div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Fórmulas: Costo total = costo unitario × cantidad. Contribución = ventas − costo total. Margen (%) = contribución ÷ ventas. Rangos: 1-20% = crítico | 20-30% = aceptable | 31-35% = ideal | +35% = revisar datos.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 6-7</div>
+              <div class="node-title">Calcular contribución, margen (%) y verificar contra rangos establecidos</div>
+              <div class="node-note">Rangos: 1-20% crítico | 20-30% preventivo | 31-35% aceptable</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Pegar en archivo 'Margen por mes X artículo'. Pestañas: X artículo (mayor tiempo), X cliente, X marca, X vendedor.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 8-11</div>
+              <div class="node-title">Completar análisis: por producto, cliente, marca y vendedor</div>
+              <div class="node-note">Archivo: "Margen por mes X artículo" (anual, se llena mes a mes)</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Pestañas revisadas mensualmente: X artículo, X cliente, X marca, X vendedor, Ventas-Gastos. Intercompany: solo se revisa a inicio de año con GG.">
+            <div class="n-output" style="border-color:var(--chain-comm)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Presentar reporte completo al Gerente General (Ernesto Castillo)</div>
+              <span class="node-role">Ernesto Castillo</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 13: REPORTE DÍAS DE INVENTARIO ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-comm">13 · Reporte Días de Inventario</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-comm);color:var(--chain-comm)">INICIO — Cierre de mes</div></div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Dayana genera el reporte base con cantidad, costo y total por ítem. Es la fuente de datos principal para todos los sub-reportes.">
+            <div class="n-input-wrap">
+              <div class="n-input" style="border-color:var(--chain-comm)">
+                <div class="node-step">ENTRADA</div>
+                <div class="node-title">Obtener reporte de inventario de Dayana al cierre del mes</div>
+                <span class="node-role">Dayana genera → Patricia recibe</span>
+              </div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Columna adicional que se agrega al reporte de Dayana. Columnas incluidas: Clasificación, Ventas últimos 3 meses, Promedio de venta últimos 3 meses, Meses de inventario.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 2</div>
+              <div class="node-title">Agregar columna "Consumo de los últimos 3 meses" al reporte</div>
+              <span class="node-tool">SAP / Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Fórmula: Stock actual ÷ Promedio de venta mensual = meses de inventario. Identifica excesos y ítems en riesgo de obsolescencia.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 3</div>
+              <div class="node-title">Calcular días de inventario y meses de inventario por ítem</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Rojo: ítems sin venta en más de 1 año. Amarillo: ítems sin venta en los últimos 3 meses.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Catalogar ítems por color: Rojo (+1 año sin venta) / Amarillo (-3 meses sin venta)</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Reportes independientes: producto terminado, empaques, etiquetas, materia prima y otros. Misma estructura y columnas, solo cambia el filtro de tipo de inventario.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 5</div>
+              <div class="node-title">Generar reportes por separado: PT, empaques, etiquetas, materia prima y otros</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Envío directo a Ernesto Castillo. Incluir todos los sub-reportes en el mismo correo. Objetivo: visibilidad de estado de inventario e ítems de riesgo.">
+            <div class="n-output" style="border-color:var(--chain-comm)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Enviar reportes al Gerente General (Ernesto Castillo) por correo</div>
+              <span class="node-tool">Correo</span><span class="node-role">Ernesto Castillo</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 14: SEGUIMIENTO AC WALMART ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-comm">14 · Seguimiento Ítems AC Walmart</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-comm);color:var(--chain-comm)">INICIO — Semanal / AC activa: diario</div></div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Revisar correo para confirmar si el equipo comercial incluyó a Operaciones en copia al enviar propuesta a WM.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Verificar si se recibió información de la Actividad Comercial (AC)</div>
+              <span class="node-tool">Correo / WhatsApp</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative;border-color:var(--chain-comm)">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer" style="border-color:var(--chain-comm)">
+                  <div class="n-diamond-inner" style="color:var(--chain-comm)">¿Se recibió correo de AC?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow comm" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Consultar grupo "Urgencias Walmart" y revisar calendario AC (Gabriela)</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow comm" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Confirmar propuesta y listado de ítems con Andrea y Ernesto</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow comm" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Para cada ítem confirmado: ¿Es recurrente o nuevo? Recurrente → paso 5. Nuevo → verificar arte de etiqueta con Jessica.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Clasificar ítems: ¿Recurrentes o Nuevos?</div>
+              <span class="node-tool">SAP / WhatsApp</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative;border-color:var(--chain-comm)">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer" style="border-color:var(--chain-comm)">
+                  <div class="n-diamond-inner" style="color:var(--chain-comm)">¿Ítem NUEVO?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow comm" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Verificar con Jessica (Diseñadora) si arte de etiqueta está aprobado</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow comm" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Solicitar cantidades proyectadas a Andrea (Enc. Comercial WM)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow comm" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Mínimo 3 semanas de anticipación a la ventana de pedido WM. WM hace pedidos 15-22 días antes del inicio de la AC. PACKS → programar con mayor anticipación (maquila interna requiere tiempo adicional).">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 6</div>
+              <div class="node-title">Crear proyección de unidades y programar en sistema de producción</div>
+              <div class="node-note">Mínimo 3 semanas antes de ventana de pedido WM</div>
+              <span class="node-crit">Packs = más tiempo</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Cinthya: organiza producción. Dayana: gestiona insumos (envases, tapas, plásticos). Jessica: confirma arte para productos nuevos.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 7</div>
+              <div class="node-title">Informar a Cinthya (producción) y Dayana (compras) sobre cantidades y fechas</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Si falta algún componente → Emitir OC urgente o escalar a Gerencia de inmediato. NO ingresar a producción si faltan componentes.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 8</div>
+              <div class="node-title">Verificar disponibilidad de todos los componentes</div>
+              <span class="node-crit">No iniciar si faltan componentes</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="PT debe estar listo al menos 3 semanas antes del inicio de la AC. Si hay retraso → escalar a Gerencia inmediatamente.">
+            <div class="n-output" style="border-color:var(--chain-comm)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Confirmar PT disponible en bodega antes de ventana de pedido WM</div>
+              <div class="node-note">≥3 semanas antes del inicio de la AC</div>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+      <!-- ── PROCESO 15: CATÁLOGOS DE TEMPORADA ── -->
+      <div class="flow-card">
+        <div class="flow-card-title fc-comm">15 · Elaboración Catálogos de Temporada</div>
+        <div class="flow-column">
+          <div class="node"><div class="n-oval" style="border-color:var(--chain-comm);color:var(--chain-comm)">INICIO — Por temporada comercial</div></div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Revisar calendario anual de temporadas: Día de la Madre, Navidad, Día del Padre, Regreso a Clases, etc.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 1</div>
+              <div class="node-title">Identificar la temporada comercial a trabajar</div>
+              <span class="node-tool">Calendario comercial</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative;border-color:var(--chain-comm)">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer" style="border-color:var(--chain-comm)">
+                  <div class="n-diamond-inner" style="color:var(--chain-comm)">¿Misma propuesta para varios clientes?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow comm" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Desarrollar propuesta unificada para todos</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow comm" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Desarrollar catálogos independientes por cliente</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow comm" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Consultar reporte de existencias en SAP. Verificar excedentes de envases, empaques y materiales en bodega también.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 3</div>
+              <div class="node-title">Revisar inventarios de productos terminados disponibles</div>
+              <span class="node-tool">SAP / Reporte bodega</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Sesión virtual con Jessica. Evaluar combinaciones, presentaciones especiales y paquetes. Criterios: atractivo para el cliente, aprovechamiento de inventario y potencial comercial para la temporada.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 4</div>
+              <div class="node-title">Sesión de trabajo con Jessica para definir productos de la propuesta</div>
+              <span class="node-role">Jessica (Diseñadora)</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Por cada producto o paquete: precio de venta, costo de producción y margen de contribución esperado. Validar que márgenes cumplan los mínimos.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 5-6</div>
+              <div class="node-title">Desarrollar análisis económico y resumen de márgenes</div>
+              <span class="node-tool">Excel</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Jessica desarrolla el diseño visual. Formato adecuado para presentar a Gerencia.">
+            <div class="n-sub" style="border-color:var(--chain-comm)">
+              <div class="node-step">SUBPROCESO</div>
+              <div class="node-title">Jessica elabora presentación visual del catálogo preliminar</div>
+              <span class="node-role">Jessica (Diseñadora)</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Presentar: catálogo + análisis de márgenes. GG evalúa: selección, precios, rentabilidad y estrategia.">
+            <div class="n-rect" style="border-color:var(--chain-comm)">
+              <div class="node-step">PASO 8</div>
+              <div class="node-title">Presentar propuesta al Gerente General para revisión</div>
+              <span class="node-role">Gerente General</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node">
+            <div class="n-rect" style="position:relative;border-color:var(--chain-comm)">
+              <div class="n-diamond-wrap">
+                <div class="n-diamond-outer" style="border-color:var(--chain-comm)">
+                  <div class="n-diamond-inner" style="color:var(--chain-comm)">¿Aprobado sin cambios?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0;align-items:flex-start;width:340px;justify-content:space-between;margin:4px 0">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-no">NO</div>
+              <div class="arrow comm" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect amber" style="width:155px;font-size:11px">
+                  <div class="node-title">Incorporar modificaciones con Jessica → volver a paso 8</div>
+                  <span class="node-pending">Iteración</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="branch-label bl-yes">SÍ</div>
+              <div class="arrow comm" style="height:16px"><div class="line" style="height:16px"></div><div class="head"></div></div>
+              <div class="node">
+                <div class="n-rect green" style="width:155px;font-size:11px">
+                  <div class="node-title">Continuar a versión final</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow comm" style="margin-top:8px"><div class="line" style="height:22px"></div><div class="head"></div></div>
+
+          <div class="node" data-tip="Archivar catálogo y análisis de márgenes. Comunicar a vendedores correspondientes para su implementación.">
+            <div class="n-output" style="border-color:var(--chain-comm)">
+              <div class="node-step">SALIDA</div>
+              <div class="node-title">Generar versión final aprobada y comunicar a vendedores</div>
+              <span class="node-tool">Archivo compartido / Correo</span>
+            </div>
+          </div>
+          <div class="arrow comm"><div class="line" style="height:22px"></div><div class="head"></div></div>
+          <div class="node"><div class="n-oval end">FIN</div></div>
+        </div>
+      </div>
+
+    </div><!-- end multi-flow -->
+  </div><!-- end chain-comm -->
+
+</div><!-- canvas-wrapper -->
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- FOOTER -->
+<div class="footer-bar">
+  <span>H5 Industrial S.A. · Área de Operaciones · Puesto de Operaciones</span>
+  <span>Haz clic en cualquier nodo para ver detalles · 15 procesos documentados</span>
+</div>
+
+<script>
+  // ── TABS ──
+  function showChain(chain) {
+    document.querySelectorAll('.chain-view').forEach(el => el.classList.remove('visible'));
+    document.querySelectorAll('.tab').forEach(el => {
+      el.classList.remove('active-prod', 'active-new', 'active-comm');
+    });
+    document.getElementById('chain-' + chain).classList.add('visible');
+    const tabs = document.querySelectorAll('.tab');
+    const map = { prod: 0, new: 1, comm: 2 };
+    tabs[map[chain]].classList.add('active-' + chain);
+  }
+
+  // ── TOOLTIP ──
+  const tooltip = document.getElementById('tooltip');
+  document.querySelectorAll('[data-tip]').forEach(node => {
+    node.addEventListener('mouseenter', (e) => {
+      const title = node.querySelector('.node-title')?.textContent?.trim() || '';
+      const tip = node.getAttribute('data-tip');
+      tooltip.innerHTML = `<h4>${title}</h4><p>${tip}</p>`;
+      tooltip.classList.add('visible');
+    });
+    node.addEventListener('mousemove', (e) => {
+      let x = e.clientX + 16;
+      let y = e.clientY + 16;
+      if (x + 320 > window.innerWidth) x = e.clientX - 336;
+      if (y + 120 > window.innerHeight) y = e.clientY - 130;
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
+    });
+    node.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('visible');
+    });
+  });
+</script>
+</body>
+</html>
